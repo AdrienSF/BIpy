@@ -27,3 +27,4 @@ def test_ClassifierInlet():
         assert math.isclose(htime, ttime, abs_tol=1e2)
     send_proc.terminate()
     send_proc.join()
+
