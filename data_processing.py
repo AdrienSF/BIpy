@@ -1,6 +1,7 @@
 from  numpy.lib.stride_tricks import sliding_window_view
 import numpy as np
 import mne
+import pyxdf
 
 
 
@@ -29,11 +30,12 @@ def organize_xdf(xdf_filename: str, trial_duration: float, gelled_indeces=list(r
 
     total_channels = data.shape[0]
 
-    assert total_channels <= max(gelled_indeces) + 1
+    assert total_channels >= max(gelled_indeces) + 2
     if total_channels != 68:
         raise Warning('Expected 68 channels but found: ' + str(total_channels))
 
-    data = data[gelled_indeces]
+    # data = data[gelled_indeces]
+    # total_gelled = data.shape[0]
     sfreq = float(streams[0]["info"]["nominal_srate"][0])
     info = mne.create_info(total_channels, sfreq=sfreq)
     raw = mne.io.RawArray(data, info)
@@ -50,11 +52,13 @@ def organize_xdf(xdf_filename: str, trial_duration: float, gelled_indeces=list(r
             event_id = [instructed_trigger_map[trig_name]]
             label = instructed_trigger_map[trig_name]
         
-        epochs = mne.Epochs(raw, events, event_id=event_id, tmin = 0, trial_duration = 1, baseline = (0,0)).get_data()
-        # transpose each epoch to get samples as rows and channels as columns
-        to_append = np.empty((0, total_channels))
+        epochs = mne.Epochs(raw, events, event_id=event_id, tmin=0, tmax=trial_duration, baseline=(0,0)).get_data()
+
+
+        # transpose each epoch to get samples as rows and channels as columns -- NOT because mne's CSP expects transpose
         for trial_num in range(epochs.shape[0]):
-            trials.append(epochs[trial_num].T)
+            # keep only gelled channels
+            trials.append(epochs[trial_num, gelled_indeces])#.T)
             labels.append(label)
         
 
