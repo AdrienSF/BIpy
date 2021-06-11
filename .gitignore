@@ -133,3 +133,5 @@ train_data_analysis.ipynb
 
 # ignore data
 *.xdf
+*.npy
+*.mat

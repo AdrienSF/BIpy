@@ -1,7 +1,9 @@
 from  numpy.lib.stride_tricks import sliding_window_view
+from scipy import signal as sg
 import numpy as np
 import mne
 import pyxdf
+from sklearn.base import TransformerMixin
 
 
 
@@ -23,8 +25,13 @@ default_free_trigmap = {
 
 
 
+# for gell EEG use electrodes fc, c, and cp 1 through 6 corresponding to indeces:
+fc_c_cp_1through6 = [5, 6, 7, 10, 11, 21, 22, 24, 27, 28, 38, 39, 40, 42, 53, 55, 56, 57]
 
-def organize_xdf(xdf_filename: str, trial_duration: float, gelled_indeces=list(range(32,67)), stim_channel=67, instructed_trigger_map=default_instructed_trigmap, free_trigger_map=default_free_trigmap):
+# (for some of my data it seems only electrodes > 32 were gelled, leaving: 
+# [38, 39, 40, 42, 53, 55, 56, 57]
+
+def organize_xdf(xdf_filename: str, trial_duration: float, gelled_indeces=fc_c_cp_1through6, stim_channel=67, instructed_trigger_map=default_instructed_trigmap, free_trigger_map=default_free_trigmap):
     streams, header = pyxdf.load_xdf("data.xdf")
     data = streams[0]["time_series"].T
 
@@ -71,30 +78,48 @@ def organize_xdf(xdf_filename: str, trial_duration: float, gelled_indeces=list(r
 
 
 
-
+# sliding window over time for data.shape = (trial, channel, time)
 def get_sliding_window_partition(data, labels, window_size):
     assert len(data.shape) == 3
+    if data.shape[2] == window_size:
+        return data, labels
 
-    windowed_data = np.empty((0,data.shape[2]))
-    windowed_labels = []
+    windowed_data = np.empty((0, data.shape[1], window_size))
+    windowed_labels = np.empty((0,))
     for i in range(data.shape[0]):
         trial = data[i]
-        print(trial)
-        windows = sliding_window_view(trial, (window_size, data.shape[2]))
-        true_shape = list(windows.shape)
-        true_shape.pop(1)
-        true_shape = tuple(true_shape)
-
-        windows = windows.reshape(true_shape)
-        print('windows')
-        print(windows)
-        np.append(windowed_data, windows, axis=0)
+        # print(trial)
+        windows = sliding_window_view(trial, (data.shape[1], window_size))[0]
+        # print('windows')
+        # print(windows)
+        windowed_data = np.append(windowed_data, windows, axis=0)
 
 
-        new_labels = np.array([ labels[i] for _ in windows.shape[0] ])
-        np.append(windowed_labels, new_labels, axis=0)
+        new_labels = np.array([ labels[i] for _ in range(windows.shape[0]) ])
+        # print('labels')
+        # print(new_labels)
+        windowed_labels = np.append(windowed_labels, new_labels, axis=0)
 
 
     return windowed_data, windowed_labels
 
     
+
+# low pass 70hz
+# data.shape = (trials, channels, time)  -- with axis=2 it can filter the entire data cube at once
+def lowpass_filter(data, lowcut=70 ,fs=500, order=6, axis=2):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    b, a = sg.butter(order, low, btype='low', analog=False)
+    y = sg.lfilter(b, a, data, axis=axis)
+    return y
+
+
+class LowpassWrapper(TransformerMixin):
+    def __init__(self, lowcut=70 ,fs=500, order=6, axis=2):
+        self.fit_transform = lambda data, x=None : lowpass_filter(data, lowcut, fs, order, axis)
+        self.transform = self.fit_transform
+
+
+    def __str__(self):
+        return 'low_pass_filter'
