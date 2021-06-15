@@ -26,12 +26,3 @@ electrode_info.json
 
 
 """
-
-    """Gets and prints the spreadsheet's header columns
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-    """

@@ -37,6 +37,8 @@ fc_c_cp_1through6.__doc__ = 'Indeces corresponding to electrodes fc, c, and cp 1
 def organize_xdf(xdf_filename: str, trial_duration: float, gelled_indeces=fc_c_cp_1through6, stim_channel=67, instructed_trigger_map=default_instructed_trigmap):
     """Function to organize motor imagery xdf data into labeled epochs. Does not support free trials
 
+    Free tip: avoid using xdf data wherever possible
+
     Parameters
     ----------
     xdf_filename : str

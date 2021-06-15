@@ -21,13 +21,13 @@ class WindowInlet():
     
     """
 
-    def __init__(self, source_id='17010768', stream_no=0, window_size=500):
+    def __init__(self, source_id='myuid323457', stream_no=0, window_size=500):
         """
         Parameters        
         ----------
             source_id : str
                 Pylsl stream source_id of incoming data buffered for sliding window
-                Default 17010768 - ActiChamp, for dry EEG use myuid323457
+                Default myuid323457 - dry EEG, for ActiChamp use 17010768
             stream_no : int
                 Index of the stream. Should be 0 or 1, ask Tian for help on this
                 Default 0
