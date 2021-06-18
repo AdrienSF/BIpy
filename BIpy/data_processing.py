@@ -11,14 +11,14 @@ default_instructed_trigmap = {
     'instructed_left': 12,
     'instructed_right': 13
 }
-default_instructed_trigmap.__doc__ = 'Default trigger/event values in gel EEG data for instructed left/right motor imagery trials'
+# default_instructed_trigmap.__doc__ = 'Default trigger/event values in gel EEG data for instructed left/right motor imagery trials'
 
 default_free_trigmap = {
     'free_start': 14,
     'free_left': 15,
     'free_right': 16
 }
-default_free_trigmap.__doc__ = 'Default trigger/event values in gel EEG data for free choice left/right motor imagery trials'
+# default_free_trigmap.__doc__ = 'Default trigger/event values in gel EEG data for free choice left/right motor imagery trials'
 
 
 
@@ -29,7 +29,7 @@ default_free_trigmap.__doc__ = 'Default trigger/event values in gel EEG data for
 
 # for gell EEG use electrodes fc, c, and cp 1 through 6 corresponding to indeces:
 fc_c_cp_1through6 = [5, 6, 7, 10, 11, 21, 22, 24, 27, 28, 38, 39, 40, 42, 53, 55, 56, 57]
-fc_c_cp_1through6.__doc__ = 'Indeces corresponding to electrodes fc, c, and cp 1 through 6, found to be most useful for BCI. Index <=> electrode mappings can be found in BIpy.electrode_info.csv'
+# fc_c_cp_1through6.__doc__ = 'Indeces corresponding to electrodes fc, c, and cp 1 through 6, found to be most useful for BCI. Index <=> electrode mappings can be found in BIpy.electrode_info.csv'
 
 # (for some of my data it seems only electrodes > 32 were gelled, leaving: 
 # [38, 39, 40, 42, 53, 55, 56, 57]

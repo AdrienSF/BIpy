@@ -2,8 +2,8 @@ from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 from multiprocessing import Process
 from time import sleep, time
 from BIpy.bci.classifer_pocess import ClassifierProcess
-from BIpy.bci.classifier_inlet import ClassifierInlet
-from BIpy.bci.classifiers import DummyClassifier
+from BIpy.bci.inlets import ClassifierInlet
+from BIpy.bci.models import DummyClassifier
 import math
 
 

@@ -1,4 +1,4 @@
-from BIpy.bci.classifiers import get_trained_CSP_LDA
+from BIpy.bci.models import get_trained_CSP_LDA
 import numpy as np
 from sklearn.model_selection import cross_val_score
 import random
@@ -6,8 +6,8 @@ import random
 
 def test_get_trained_CSP_LDA():
     # load sample data
-    data = np.load('x_Train_Akima_NF_Dry_EEG3.npy')
-    labels = np.load('y_Train_Akima_NF_Dry_EEG3.npy')
+    data = np.load('tests/x_Train_Akima_NF_Dry_EEG3.npy')
+    labels = np.load('tests/y_Train_Akima_NF_Dry_EEG3.npy')
     # just test that it trains and runs without errors
     clf = get_trained_CSP_LDA(data, labels, window_size=1000)
 
