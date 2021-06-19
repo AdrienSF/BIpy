@@ -35,10 +35,6 @@ class WindowInlet():
                 Number of past samples returned on call of pull_window
                 Default 500
 
-        Methods
-        -------
-        pull_window
-            Pulls the last window_size samples from inlet
         """
 
         print("looking for stream \"" + str(source_id) + "\"...")

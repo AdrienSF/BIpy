@@ -10,7 +10,61 @@ def is_jsonable(x):
 
 
 class Session():
+    """A class that handles the execution and data collection of a Psychopy experiment
+
+    Attributes
+    ----------
+    info : dict or None
+        Information about the session, ex: {'session_id': 1234}
+    blocks : list of lists of functions
+        List of blocks, each block a list of trials, each trial a function that takes exactly one input: 'logger'
+        each trial function should execute the intended trial
+    use_json : bool
+        Flag to indicate whether or not to save data to json on calling save()
+    to_hide : list
+        List of trials to be ignored when saving to csv
+    log_history : list of lists of dicts
+        Used to store trial data on call of log()
+    _iq : list
+        Index queue, list of tuples corresponding to the indeces of each trial function in blocks
+    
+
+
+    Methods
+    -------
+    run
+        Iterates through and runs all trial functions of blocks in order
+    log(to_log: dict, save_to_file=True)
+        Stores to_log in log_history[current_block_num][current_trial_num]
+    hide_trial
+        Marks current trial to be ignored when saving to csv
+    save
+        Attempts to find an apropriate filename, and calls save_to_csv(filename)
+        if use_json is True, also calls save_to_json(filename)
+    save_to_csv(filename)
+        Saves the Session's info, and log_history to filename in csv format
+    get_current
+        Returns the current block and trial nuber
+    save_to_json(filename)
+        Saves as much information about the current Session object as possible to filename in json format
+
+    """
+
     def __init__(self, info: dict, blocks: list, use_json=False):
+        """
+        Parameters        
+        ----------
+        info : dict or None
+            Information about the session, ex: {'session_id': 1234}
+        blocks : list of lists of functions
+            List of blocks, each block a list of trials, each trial a function that takes exactly one input: 'logger'
+            each trial function should execute the intended trial
+        use_json : bool
+            Flag to indicate whether or not to save data to json on calling save()        
+
+        """
+
+
         # verify input
         assert info == None or type(info) == dict
         assert type(blocks) == list
@@ -51,6 +105,8 @@ class Session():
 
 
     def run(self):
+        """Iterates through and runs all trial functions of blocks in order"""
+
         try:
             for block in self.blocks:
                 for trial in block:
@@ -64,6 +120,18 @@ class Session():
 
 
     def log(self, to_log: dict, save_to_file=True):
+        """Stores to_log in log_history[current_block_num][current_trial_num]
+
+        Parameters
+        ----------
+        to_log: dict
+            Python dict with information to save from the current trial, ex: {'RT': .129486}
+        save_to_file: bool, defaul=True
+            Flag to save data to file
+            this can take time so set to False if you want to log some data but the current trial needs strict timing,
+            then call Session.save() a the end of the experiment
+        """
+
         # make sure to_log has str keys
         to_log = { str(key): to_log[key] for key in to_log }
 
@@ -78,6 +146,11 @@ class Session():
 
 
     def save(self):
+        """Attempts to find an apropriate filename, and calls save_to_csv(filename)
+
+        If self.use_json is True, also calls save_to_json(filename)
+        """
+
         # try to get a reasonable ilename
         if self.info:
             idkey = [key for key in self.info if 'id' in key.lower()]
@@ -101,6 +174,13 @@ class Session():
 
 
     def save_to_csv(self, filename):
+        """Saves the Session's info, and log_history to filename in csv format
+        
+        Parameters
+        ----------
+        filename : str
+        """
+
         # make copy of log history
         hist = [ [trial for trial in block] for block in self.log_history ]
         # remove ignored from copy
@@ -140,10 +220,19 @@ class Session():
 
 
     def get_current(self):
+        """Returns the current block and trial nuber"""
+
         return self._iq[0]
 
 
     def save_to_json(self, filename):
+        """Saves as much information about the current Session object as possible to filename in json format
+
+        Parameters
+        ----------
+        filename : str        
+        """
+
         with open(filename, 'w') as json_file:
             to_save = {key:value for key, value in self.__dict__.items() if not key.startswith('__') and not callable(key) and is_jsonable(value)}
             json_file.write(json.dumps(to_save))
