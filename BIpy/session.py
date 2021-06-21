@@ -220,7 +220,7 @@ class Session():
 
 
     def get_current(self):
-        """Returns the current block and trial nuber"""
+        """Returns the current block and trial nuber: tuple (block, trial)"""
 
         return self._iq[0]
 

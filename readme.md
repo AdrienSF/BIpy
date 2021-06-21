@@ -68,7 +68,7 @@ electrode_info.json
         win.flip()
 
     
-    # stop the classifier process, if not it could keep running in the background indefinately
+    # stop the classifier process, if not it could keep running in the background indefinetly
     clfproc.kill()
     clfproc.close()
 
@@ -80,6 +80,8 @@ electrode_info.json
 ### Example usage of Session
 ```python
     from BIpy.sesssion import Session
+    import random
+    import numpy as np
 
     # [OMITTED]: Psychopy stuff such as making window, stims...
 
@@ -91,30 +93,59 @@ electrode_info.json
         # hide this trial so it doesn't show up in the saved csv file
         logger.hide_trial()
 
-    def masking_trial(logger):
+    def discrimination_RT_trial(logger):
         # wait for keypress to start trial
         event.waitKeys()
 
-        mask.draw()
+        # present fixation cross (random amount of time)
+        cross.draw()
         win.flip()
-        core.wait(.096)
+        core.wait(random.uniform(1,2))
 
-        stim.draw()
+        # present l/r arrow at random
+        is_left = random.choice([0,1])
+        if is_left:
+            left_arrow.draw()
+        else:
+            right_arrow.draw()
+
+        # get reaction time
         win.flip()
-        core.wait(.033)
+        key_pressed, RT = event.waitKeys(keyList=['0', '1'], timeStamped=core.Clock())[0]
 
-        mask.draw()
+        # log key pressed, RT, and which arrow was displayed to a csv file
+        info = {'RT': RT, 'key_pressed': key_pressed, 'is_left': is_left}
+        logger.log(info)
+
+        # get current block and trial number
+        current_block_num, current_trial_num = logger.get_current()
+        # get all past trials this block
+        past_trials = logger.log_history[current_block_num][:current_trial_num]
+        # get average past correct reaction time for the current block
+        mean_rt = np.mean([ trial['rt'] for trial past_trials if str(trial['is_left']) == trial['key_pressed'] ])
+
+        # display feedback to the participant
+        if str(is_left) != key_pressed:
+            text_stim.text = 'Wrong side!'
+        elif RT > mean_rt:
+            text_stim.text = 'Slower than average'
+        else:
+            text_stim.text = 'Faster than average'
+
+        text_stim.draw()
         win.flip()
-        core.wait(.096)
-
-        # log reaction time, or something and use past logged data? <------############
+        core.wait(1)
 
 
 
 
-    # just one block of one instruction and 5 trials
-    trials = [instructions, masking_trial, masking_trial, masking_trial, masking_trial, masking_trial]
-    bocks = [trials]
+    # set up trials and blocks
+    # first block will just be instructions 
+    instruction_block = [instructions]
+    # second block will be 4 discrimination RT trials
+    trial_block = [discrimination_RT_trial, discrimination_RT_trial, discrimination_RT_trial, discrimination_RT_trial]
+    blocks = [instruction_block, trial_block]
+
     # some info about the experiment we might want saved
     refresh_rate = win.monitorFramePeriod
     sess_id = input('Enter session id:')
@@ -126,8 +157,6 @@ electrode_info.json
     # exit Psychopy
     win.close()
     core.quit()
-
-
 ```
 
 
@@ -318,7 +347,7 @@ save_to_csv(filename)
 
 get_current
 
-> Returns the current block and trial nuber
+> Returns the current block and trial nuber: tuple (block, trial)
 
 save_to_json(filename)
 
