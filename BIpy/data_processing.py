@@ -112,7 +112,7 @@ def organize_xdf(xdf_filename: str, trial_duration: float, gelled_indeces=fc_c_c
 
 
 # sliding window over time for data.shape = (trial, channel, time)
-def get_sliding_window_partition(data, labels, window_size):
+def get_sliding_window_partition(data, labels, window_size, step=1):
     """Splits data into several windows
 
     Parameters
@@ -124,6 +124,8 @@ def get_sliding_window_partition(data, labels, window_size):
     window_size : int
         Size in samples (not time) of the windows the data will be split into
         If window_size corresponds to the number of recorded samples per trial, the function returns the input data and labels unchaged
+    step : int, default 1
+        Step size of the sliding window
 
     Returns
     -------
@@ -155,7 +157,7 @@ def get_sliding_window_partition(data, labels, window_size):
         windowed_labels = np.append(windowed_labels, new_labels, axis=0)
 
 
-    return windowed_data, windowed_labels
+    return windowed_data[::step], windowed_labels[::step]
 
     
 

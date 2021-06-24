@@ -50,7 +50,7 @@ class Session():
 
     """
 
-    def __init__(self, info: dict, blocks: list, use_json=False):
+    def __init__(self, info: dict, blocks: list, use_json=False, hide_info=False, suppress_save=False):
         """
         Parameters        
         ----------
@@ -59,17 +59,22 @@ class Session():
         blocks : list of lists of functions
             List of blocks, each block a list of trials, each trial a function that takes exactly one input: 'logger'
             each trial function should execute the intended trial
-        use_json : bool
-            Flag to indicate whether or not to save data to json on calling save()        
+        use_json : bool, default False
+            Flag to indicate whether or not to save data to json on calling save()     
+        suppress_save : bool, default False
+            Flag to indicate log() calls should never save to file save to file
+        hide_info : bool, default False
+            Flag to indicate if 'info' should be saved to csv
 
         """
 
 
         # verify input
-        assert info == None or type(info) == dict
         assert type(blocks) == list
         assert all(type(block) == list for block in blocks)
         assert all(callable(trial) for block in blocks for trial in block)
+
+        
         # check that each trial func takes exactly one input
         for block_num in range(len(blocks)):
             for trial_num in range(len(blocks[block_num])):
@@ -87,13 +92,16 @@ class Session():
                     raise RuntimeError('Block ' + str(block_num) + ' trial ' + str(trial_num) + '\'s function has ' + str(positional_args) + ' positional arguments, exactly 1 positional argment: \'logger\' is required')
 
 
-        if not info:
-            raise UserWarning('No session info provided')
+        if type(info) != dict:
+            self.hide_info = True
+            raise UserWarning('No dict provided as \'info\', it will not be saved to csv')
 
 
         self.info = info
         self.blocks = blocks
         self.use_json = use_json
+        self.hide_info = hide_info
+        self.suppress_save = suppress_save
         self.to_hide = []
         
         # make queue of indeces
@@ -131,6 +139,9 @@ class Session():
             this can take time so set to False if you want to log some data but the current trial needs strict timing,
             then call Session.save() a the end of the experiment
         """
+
+        if self.suppress_save:
+            save_to_file = False
 
         # make sure to_log has str keys
         to_log = { str(key): to_log[key] for key in to_log }
@@ -190,8 +201,9 @@ class Session():
         hist = [ [trial for trial in block] for block in hist if block ]
 
 
-        # write the contents of info at the top of the file
-        top = [ item for pair in self.info.items() for item in pair ]
+        if not self.hide_info:
+            # write the contents of info at the top of the file
+            top = [ item for pair in self.info.items() for item in pair ]
 
         # get all keys
         keys = { key for block in hist for trial in block for key in trial.keys() }
@@ -213,7 +225,8 @@ class Session():
         with open(filename, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         
-            csvwriter.writerow(top)
+            if not self.hide_info:
+                csvwriter.writerow(top)
             csvwriter.writerow(header)
             csvwriter.writerows(contents)
 
