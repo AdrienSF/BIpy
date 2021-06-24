@@ -7,8 +7,11 @@ from BIpy.inlets import ClassifierInlet
 from BIpy.data_processing import get_sliding_window_partition
 
 from psychopy import visual, core, event
+from pylsl import StreamInlet, resolve_stream
 
+win = visual.Window(monitor='testMonitor', fullscr=True)
 text_stim = visual.TextStim(win)
+nf_stim = NeuroFeedbackStim(win, 6)
 
 def collect(logger):
     info = logger.info
@@ -29,7 +32,7 @@ def collect(logger):
     while clock.getTime() < info['trial_duration']:
         # neurofeedback
         prob = info['cinlet'].pull_sample[0][1]
-        info['nf_stim'].draw(prob)
+        nf_stim.draw(prob)
         win.flip()
         data = data + info['eeg_inlet'].pull_chunk()[0][0]
         predict_probas.append(prob)
@@ -57,7 +60,7 @@ def train(logger):
         info['cproc'].kill()
         info['cproc'].close()
     # split data into the right size chunks for clf input
-    data, labels = get_sliding_window_partition(np.array(info['data']), np.array(info['labels']), window_size=500)
+    data, labels = get_sliding_window_partition(np.array(info['data']), np.array(info['labels']), window_size=info['window_size'])
     # re-train model
     info['clf'].fit(data, labels)
     # re-start classifier process
@@ -74,13 +77,36 @@ def train(logger):
 
 
 
-def get_training_session(clf, iterations: int, trials_per_iteration: int, trial_duration=4, window_size=500, eeg_source_id='myuid323457', eeg_stream_no=0):
+def run_training_session(clf, iterations: int, trials_per_iteration: int, trial_duration=4, window_size=500, eeg_source_id='myuid323457', eeg_stream_no=0):
     info = {
         'clf': clf,
-        'iterations':  iterations,
-        'trials_per_iteration': trials_per_iteration,
         'trial_duration': trial_duration,
         'window_size': window_size,
         'eeg_source_id': eeg_source_id,
         'eeg_stream_no': eeg_stream_no
     }
+
+    # start recording eeg (collect noise)
+    print('looking for stream...')
+    streams = resolve_stream('source_id', eeg_source_id)
+    info['eeg_inlet'] = StreamInlet(streams[eeg_stream_no])
+    print('collecting noise...')
+    data = []
+    clock = core.clock()
+    while clock.getTime() < trial_duration:
+        data = data + info['eeg_inlet'].pull_chunk()[0][0]
+        core.wait(.01)
+
+    # initially, train clf on noise just so it spits out random output for the first collect trial
+    fakel = data[:window_size]
+    faker = data[-window_size:]
+    data = fakel + faker
+    labels = [0,1]
+    info['clf'].fit(data, labels)
+
+    # make session
+    blocks = [ [collect]*trials_per_iteration, [train] ]*iterations
+    sess = Session(info, blocks, use_json=True, hide_info=True)
+    print('running session...')
+    sess.run()
+
