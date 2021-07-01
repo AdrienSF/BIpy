@@ -1,5 +1,5 @@
 from pylsl import StreamInlet, resolve_byprop
-
+import numpy as np
 from time import sleep, time
 
 class WindowInlet():
@@ -34,6 +34,8 @@ class WindowInlet():
             window_size : int
                 Number of past samples returned on call of pull_window
                 Default 500
+            transpose_output : bool, default True
+                If True transposes the output of the window so that it has the shape expected by mne's CSP
 
         """
 
@@ -66,8 +68,8 @@ class WindowInlet():
 
         Returns
         -------
-        window : list
-            List of window_size last samples pulled from inlet
+        window : list, shape: (window_size, channels)
+            list of window_size last samples pulled from inlet
         """
 
         if not window_size:
@@ -78,9 +80,9 @@ class WindowInlet():
         # if no data is buffered, return
         if not chunk:
             return
-        print('chunk:', chunk)
-        self.window = self.window + chunk[0]
-        print('window', self.window)
+        # print('len chunk:', len(chunk))
+        self.window = self.window + chunk
+        # print('window shape:', np.array(self.window).shape)
 
         # trim to window size
         if len(self.window) > self.window_size:
@@ -88,7 +90,7 @@ class WindowInlet():
             self.window = self.window[excess:]
 
 
-        print('window', self.window)
+        # print('window shape:', np.array(self.window).shape)
         return self.window
 
 

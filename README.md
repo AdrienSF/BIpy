@@ -70,6 +70,7 @@ electrode_info.json
     
     # stop the classifier process, if not it could keep running in the background indefinetly
     clfproc.kill()
+    clfproc.join()
     clfproc.close()
 
     # exit Psychopy

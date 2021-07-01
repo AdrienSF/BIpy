@@ -3,6 +3,7 @@ from sklearn.pipeline import Pipeline
 from mne.decoding import CSP
 from BIpy.data_processing import get_sliding_window_partition, LowpassWrapper
 
+import numpy as np
 
 class DummyClassifier():
     """Dummy classifier for testing purpose"""
@@ -17,7 +18,7 @@ class DummyClassifier():
 
 # window size in samples, not seconds
 def get_trained_CSP_LDA(data, labels, window_size=None, preprocessing=LowpassWrapper()):
-    """Returns an sklearn pipeline of [csp, lda]
+    """Returns a trained sklearn pipeline of [csp, lda]
 
     Parameters
     ----------
@@ -57,3 +58,21 @@ def get_trained_CSP_LDA(data, labels, window_size=None, preprocessing=LowpassWra
 
     # return trained model
     return clf
+
+
+# [NOTE]: extend this so it generalizes to gell eeg
+class WrappedCSPLDAClassifier():
+    def __init__(self, window_siz=1000, preprocessing=LowpassWrapper()):
+        self.window_siz=1000
+
+        # make pipeline
+        preproc = preprocessing
+        lda = LinearDiscriminantAnalysis()
+        csp = CSP(n_components=10, reg=None, log=None, norm_trace=False, component_order='alternate')
+        self.clf = Pipeline([(str(preproc), preproc), ('CSP', csp), ('LDA', lda)])
+
+    def predict_proba(self, window):
+        data = np.transpose(np.array(window))[:20]
+        # print('data shape in wrapped:', data.shape)
+        proba = self.clf.predict_proba([data])
+        return proba[0][1] # proba = [[prob_left, prob_right]]
