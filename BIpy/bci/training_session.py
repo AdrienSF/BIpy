@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import gc
 
 from BIpy.session import Session
 from BIpy.data_processing import get_sliding_window_partition
@@ -39,14 +40,27 @@ def collect(logger):
     predict_probas = []
     clock = core.Clock()
     print('starting main loop')
-    while clock.getTime() < info['trial_duration']:
+    # wait until classifier process is ready to start classifying
+    info['cinlet'].pull_sample()
+    # clear eeg lsl buffer
+    info['eeg_inlet'].pull_chunk(max_samples=int(1e6))
+    while clock.getTime() < info['trial_duration'] or len(trial_data) < 2000: # [NOTE] keep going if there happen to not be enough samples. un-hard-code this
         # neurofeedback
         prob = info['cinlet'].pull_sample()[0][0] # sample = [[prob], timestamp]
-        print('pulled sample:', prob)
+        # print('pulled sample:', prob)
         nf_stim.draw(prob)
         win.flip()
         trial_data = trial_data + info['eeg_inlet'].pull_chunk()[0]
         predict_probas.append(prob)
+
+# do one more iteration of neurofeedback, since it seems I'm not getting 2000 samples total [NOTE]
+    # neurofeedback
+    # prob = info['cinlet'].pull_sample()[0][0] # sample = [[prob], timestamp]
+    # # print('pulled sample:', prob)
+    # nf_stim.draw(prob)
+    # win.flip()
+    # trial_data = trial_data + info['eeg_inlet'].pull_chunk()[0]
+    # predict_probas.append(prob)
 
 
     # ask for label
@@ -57,9 +71,14 @@ def collect(logger):
     label = int('0' in key)
 
     # append label and data to info
-    info['data'].append(trial_data)
-    info['labels'].append(label)
+    # change trial data to mne's CSP input format
+    print('untrimmed trial_data shape:', np.array(trial_data).shape)
 
+    trial_data = np.transpose(np.array(trial_data)[:2000,:20]) # [NOTE]: first 2000 samples, first 20 channels
+    print('trial_data shape:', trial_data.shape)
+    info['data'] = np.vstack((info['data'], [trial_data]))
+    info['labels'].append(label)
+    print('[collect]: data shape:', np.array(info['data']).shape)
     # log true label and list of predict proba?
     logger.log({'label': label, 'predict_probas': predict_probas})
 
@@ -71,8 +90,11 @@ def train(logger):
         info['cproc'].kill()
         info['cproc'].join()
         info['cproc'].close()
-    # split data into the right size chunks for clf input
-    data, labels = get_sliding_window_partition(np.array(info['data']), np.array(info['labels']), window_size=info['window_size'])
+    # split data into the right size chunks for clf input # [NOTE] do something about this ridiculous reshape
+    print('[train]: data shape:', np.array(info['data']).shape)
+    gc.collect()
+    data, labels = get_sliding_window_partition(info['data'], np.array(info['labels']), window_size=info['window_size'], step=200)
+    print('windowed data shape:', data.shape)
     # re-train model
     info['clf'].fit(data, labels)
     # re-start classifier process
@@ -82,8 +104,8 @@ def train(logger):
     # make new classifier inlet in case the previos timed out
     info['cinlet'] = ClassifierInlet()
     
-    # save data, labels to file
-    np.save('data.npy', np.array(info['data']))
+    # save data, labels to file # [NOTE] do something about this ridiculous reshape
+    np.save('data.npy', info['data'])
     np.save('labels.npy', np.array(info['labels']))
 
 
@@ -96,7 +118,7 @@ def run_training_session(clf, iterations: int, trials_per_iteration: int, trial_
         'window_size': window_size,
         'eeg_source_id': eeg_source_id,
         'eeg_stream_no': eeg_stream_no,
-        'data': [],
+        'data': np.empty((0,20, 2000)), # [NOTE]: parameterize or somehow integrate this
         'labels': []
     }
 
@@ -104,7 +126,7 @@ def run_training_session(clf, iterations: int, trials_per_iteration: int, trial_
     print('training on sample data, this data is discarded after the first trial and not used for subsequent training.')
     data = np.load('../../tests/test_data/x_Train_Akima_NF_Dry_EEG3.npy')
     labels = np.load('../../tests/test_data/y_Train_Akima_NF_Dry_EEG3.npy')
-    info['clf'].clf.fit(data, labels)
+    info['clf'].fit(data, labels)
     # remove this ^, have first collect trial use noise trained clf, or no clf and just random nfstim pos
 
     # start running the classifier process
@@ -132,4 +154,4 @@ def run_training_session(clf, iterations: int, trials_per_iteration: int, trial_
 
 
 clf = WrappedCSPLDAClassifier()
-run_training_session(clf, 1,1)
+run_training_session(clf, 4,16)

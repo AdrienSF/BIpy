@@ -22,8 +22,7 @@ class NeuroFeedbackStim():
 
 
     def draw(self, proportion=None):
-        print("I'm trying to draw myself!")
-        if not proportion:
+        if proportion == None:
             for seg in self.segments:
                 seg.draw()
             self.frame.draw()

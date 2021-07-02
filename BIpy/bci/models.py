@@ -76,3 +76,7 @@ class WrappedCSPLDAClassifier():
         # print('data shape in wrapped:', data.shape)
         proba = self.clf.predict_proba([data])
         return proba[0][1] # proba = [[prob_left, prob_right]]
+
+
+    def fit(self, data, labels): # [NOTE]: wrap input here as well?
+        self.clf.fit(data, labels)
