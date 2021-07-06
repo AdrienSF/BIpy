@@ -5,6 +5,8 @@ import mne
 import pyxdf
 from sklearn.base import TransformerMixin
 
+from itertools import islice
+from collections import deque
 
 
 default_instructed_trigmap = {
@@ -113,7 +115,7 @@ def organize_xdf(xdf_filename: str, trial_duration: float, gelled_indeces=fc_c_c
 
 # sliding window over time for data.shape = (trial, channel, time)
 def get_sliding_window_partition(data, labels, window_size, step=1):
-    """Splits data into several windows
+    """Splits data into several windows. Deprecated (waste of memory)
 
     Parameters
     ----------
@@ -135,6 +137,7 @@ def get_sliding_window_partition(data, labels, window_size, step=1):
         1d array of labels corresponding to each window
     """
 
+    raise DeprecationWarning('This function uses way too much memory')
 
     assert len(data.shape) == 3
     if data.shape[2] == window_size:
@@ -159,7 +162,43 @@ def get_sliding_window_partition(data, labels, window_size, step=1):
 
     return windowed_data[::step], windowed_labels[::step]
 
-    
+def sliding_window_iter(total_size, window_size):
+    """Helper function to get a sliding window view of indexes"""
+    iterable = iter(range(total_size))
+    window = deque(islice(iterable, window_size), maxlen=window_size)
+    for item in iterable:
+        yield list(window)
+        window.append(item)
+    if window:  
+        # needed because if iterable was already empty before the `for`,
+        # then the window would be yielded twice.
+        yield list(window)
+
+def get_windows(data, labels, window_size: int, step_size: int):
+    """Splits data into several windows
+
+    Parameters
+    ----------
+    data : np.array
+        EEG data with shape (trials, channels, time)
+    labels : np.array
+        1d array of integer labels corresponding to left/right
+    window_size : int
+        Size in samples (not time) of the windows the data will be split into
+        If window_size corresponds to the number of recorded samples per trial, the function returns the input data and labels unchaged
+    step : int
+        Step size of the sliding window
+
+    Returns
+    -------
+    windowed_data : np.array
+        Array of shape (windows, channels, time)
+    windowed_labels : np.array
+        1d array of labels corresponding to each window
+    """
+
+    indeces_list = np.array(list(sliding_window_iter(data.shape[-1], window_size)))[::step_size]
+    return np.array([data[:,:,indeces] for indeces in indeces_list]), np.array(list(labels)*data.shape[0])
 
 # low pass 70hz
 # data.shape = (trials, channels, time)  -- with axis=2 it can filter the entire data cube at once
@@ -200,10 +239,10 @@ class LowpassWrapper(TransformerMixin):
 
     Methods
     -------
-        fit_transform(data)
-    Low pass filters data
-        transform(data) = fit_transform
-    Also low pass filters data
+    fit_transform(data)
+        Low pass filters data
+    transform(data) = fit_transform
+        Also low pass filters data
     """
 
 
