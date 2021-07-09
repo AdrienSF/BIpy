@@ -197,8 +197,13 @@ def get_windows(data, labels, window_size: int, step_size: int):
         1d array of labels corresponding to each window
     """
 
+    out_windows_per_trial = 1 + int((data.shape[1] - window_size)/step_size)
+
     indeces_list = np.array(list(sliding_window_iter(data.shape[-1], window_size)))[::step_size]
-    return np.array([data[:,:,indeces] for indeces in indeces_list]), np.array(list(labels)*data.shape[0])
+    # return np.array([data[:,:,indeces] for indeces in indeces_list]), np.array(list(labels)*out_windows_per_trial)
+    windowed_data = np.concatenate(np.array([data[:,:,indeces] for indeces in indeces_list]), axis=0)
+    windowed_labels = np.array(list(labels)*out_windows_per_trial)
+    return windowed_data, windowed_labels
 
 # low pass 70hz
 # data.shape = (trials, channels, time)  -- with axis=2 it can filter the entire data cube at once

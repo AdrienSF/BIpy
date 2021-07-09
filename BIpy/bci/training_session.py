@@ -23,7 +23,7 @@ from mne.decoding import CSP
 
 class TrainingSession():
 
-    def __init__(self, win, iterations: int, trials_per_iteration: int, clf=WrappedCSPLDAClassifier(), trial_duration=4, sampling_rate=500, data_channels=list(range(20)), window_size=1000, step_size=100, eeg_source_id='myuid323457', eeg_stream_no=0, resolution=6):
+    def __init__(self, win, iterations: int, trials_per_iteration: int, clf=WrappedCSPLDAClassifier(), trial_duration=4, sampling_rate=500, data_channels=list(range(20)), window_size=500, step_size=100, eeg_source_id='myuid323457', eeg_stream_no=0, resolution=6):
         self.window = win
         self.text_stim = visual.TextStim(self.window)
         self.nf_stim = NeuroFeedbackStim(self.window, resolution)
@@ -68,6 +68,8 @@ class TrainingSession():
         data, labels = get_windows(data, labels, window_size, step_size)
         # train classifier on noise
         print('training initial classifier on noise...')
+        print('data shape:', data.shape)
+        print('labels shape:', labels.shape)
         clf.fit(data, labels)
         ########## INITIALIZE CLASSIFIER ##########
 
