@@ -5,6 +5,6 @@ win = visual.Window(monitor='testMonitor', fullscr=True)
 
 sess = TrainingSession(win, 1, 2)
 
-session.run()
+sess.run()
 win.close()
 core.quit()
