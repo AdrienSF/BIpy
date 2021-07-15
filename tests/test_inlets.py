@@ -12,7 +12,7 @@ def send_data(source_id: str):
     outlet = StreamOutlet(info)
 
     while True:
-        sleep(.2)
+        sleep(.01)
         outlet.push_sample([time()])
 
 
@@ -24,12 +24,17 @@ def test_WindowInlet(window_size):
     winlet = WindowInlet(source_id='test_winlet', window_size=window_size)
 
     for i in range(window_size+10):
+        sleep(.01)
         htime, ttimes = time(), winlet.pull_window()
 
         # check that the data held is no longer than the specified window size
+        print('ttimes:', ttimes)
         assert len(ttimes) <= window_size
         # check that the head of the window is the most recent time
         assert math.isclose(htime, ttimes[-1], abs_tol=1e2)
+    
+    # check that quantity of buffered data reaches intended size
+    assert len(winlet.pull_window()) == window_size
 
     send_proc.terminate()
     send_proc.join()
@@ -43,6 +48,7 @@ def test_ClassifierInlet():
     cinlet = ClassifierInlet()
 
     for i in range(10):
+        sleep(.01)
         htime, ttime = time(), cinlet.pull_sample()[0][0]
         print(htime, ttime)
         assert math.isclose(htime, ttime, abs_tol=1e2)

@@ -1,6 +1,6 @@
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_byprop
 from multiprocessing import Process
-from inlets import WindowInlet
+from BIpy.bci.inlets import WindowInlet
 import numpy as np
 
 import time
@@ -41,18 +41,27 @@ def run_classifier(clf, in_source_id='myuid323457', out_source_id='classifier_ou
     print('making window inlet')
     winlet = WindowInlet(in_source_id, window_size=window_size, stream_no=stream_no)
 
+
+    # only start the predictions once the window inlet has enough data buffered
+    start = time.time()
+    total_buffered = len(winlet.pull_window())
+    while total_buffered < window_size:
+        print('Buffered samples: ' +str(total_buffered) + '/' + str(window_size))
+        # print('time elapsed:', time.time() - start)
+        if time.time() - start > 5:
+            raise TimeoutError('Insuficient data buffered, timeout expired.')
+        total_buffered = len(winlet.pull_window())
+
+    # start output stream
     print('creating stream \"'+str(out_source_id)+'\"...')
     info = StreamInfo(source_id=out_source_id)
     outlet = StreamOutlet(info)
     print('done')
 
-    # only start the predictions once the window inlet has enough data buffered
-    while len(winlet.pull_window()) < window_size: #[NOTE]: add timeout condition
-        pass
-
+    # start pushing predictions to output stream
     while True:
         pulled = winlet.pull_window()
-        # print('clf input shape:', np.array(pulled).shape)
+        print('clf input shape:', np.array(pulled).shape)
         proba = clf.predict_proba(pulled)
         # print('proba:', proba)
         outlet.push_sample([proba])

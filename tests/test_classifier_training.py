@@ -9,7 +9,7 @@ def test_get_trained_CSP_LDA():
     data = np.load('tests/test_data/x_Train_Akima_NF_Dry_EEG3.npy')
     labels = np.load('tests/test_data/y_Train_Akima_NF_Dry_EEG3.npy')
     # just test that it trains and runs without errors
-    clf = get_trained_CSP_LDA(data, labels, window_size=1000)
+    clf = get_trained_CSP_LDA(data, labels, window_size=500)
 
 
     shufi = list(range(50))

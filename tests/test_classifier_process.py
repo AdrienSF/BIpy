@@ -1,7 +1,7 @@
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 from multiprocessing import Process
 from time import sleep, time
-from BIpy.bci.classifer_pocess import ClassifierProcess
+from BIpy.bci.classifier_process import ClassifierProcess
 from BIpy.bci.inlets import ClassifierInlet
 from BIpy.bci.models import DummyClassifier
 import math
@@ -26,15 +26,15 @@ def test_ClassifierProcess():
     # run lsl input stream
     sproc = Process(target=send_data)
     sproc.start()
-
     sleep(2)
     # make and run classifier process
-    cproc = ClassifierProcess(DummyClassifier(), 'test_input')
+    cproc = ClassifierProcess(DummyClassifier(), 'test_input', window_size=10)
     cproc.start()
 
     sleep(2)
     # make classifier inlet 
     cinlet = ClassifierInlet()
+    # sleep(5)
 
     # send data, assert equals classifier inlet recieved data
     for _ in range(10):

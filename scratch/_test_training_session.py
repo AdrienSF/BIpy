@@ -1,9 +1,9 @@
-from training_session import TrainingSession
+from BIpy.bci.training_session import TrainingSession
 from psychopy import visual, core
 
 win = visual.Window(monitor='testMonitor', fullscr=True)
 
-sess = TrainingSession(win, 1, 2)
+sess = TrainingSession(win, iterations=2, trials_per_iteration=30 )
 
 sess.run()
 win.close()

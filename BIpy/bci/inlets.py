@@ -44,7 +44,7 @@ class WindowInlet():
         if not streams:
             raise TimeoutError('Stream \"' + str(source_id) + '\" not found, timeout expired.')
 
-        self.inlet = StreamInlet(streams[stream_no]) # for ActiChamp (I think streams[1]) |||| streams[0] for portable
+        self.inlet = StreamInlet(streams[stream_no], max_buflen=10000) # for ActiChamp (I think streams[1]) |||| streams[0] for portable
         print('found')
 
         self.window_size = window_size
@@ -76,13 +76,16 @@ class WindowInlet():
             window_size = self.window_size
         # should take all buffered data
         chunk = self.inlet.pull_chunk(timeout=timeout, max_samples=10000)[0]
+        # flatten chunk
+        chunk = list(np.array(chunk).flatten())
         # chunk = self.inlet.pull_sample()[0]
         # if no data is buffered, return
         if not chunk:
             return
-        # print('len chunk:', len(chunk))
+        print(chunk)
+        print('chunkshape:', np.array(chunk).shape)
         self.window = self.window + chunk
-        # print('window shape:', np.array(self.window).shape)
+        print('window shape:', np.array(self.window).shape)
 
         # trim to window size
         if len(self.window) > self.window_size:
@@ -90,7 +93,7 @@ class WindowInlet():
             self.window = self.window[excess:]
 
 
-        # print('window shape:', np.array(self.window).shape)
+        print('window shape:', np.array(self.window).shape)
         return self.window
 
 
@@ -119,6 +122,7 @@ class ClassifierInlet():
             Default 'classifier_output'
         """
         print("looking for stream \"" + str(source_id) + "\"...")
+        # streams = resolve_byprop('source_id', source_id, timeout=5)
         streams = resolve_byprop('source_id', source_id, timeout=5)
         if not streams:
             raise TimeoutError('Stream \"' + str(source_id) + '\" not found, timeout expired.')
@@ -130,4 +134,5 @@ class ClassifierInlet():
 
     def pull_sample(self):
         """returns inlet.pull_sample()"""
-        return self.inlet.pull_sample()
+        res = self.inlet.pull_sample()
+        return res

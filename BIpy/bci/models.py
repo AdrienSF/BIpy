@@ -1,7 +1,7 @@
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.pipeline import Pipeline
 from mne.decoding import CSP
-from BIpy.data_processing import get_sliding_window_partition, LowpassWrapper
+from BIpy.data_processing import get_windows, LowpassWrapper
 
 import numpy as np
 
@@ -12,12 +12,12 @@ class DummyClassifier():
 
     def predict_proba(self, data):
         """returns input[0]"""
-        # print('predict_proba:', data)
-        return data[0]
+        print('predict_proba:', data)
+        return data[-1]
 
 
 # window size in samples, not seconds
-def get_trained_CSP_LDA(data, labels, window_size=None, preprocessing=LowpassWrapper()):
+def get_trained_CSP_LDA(data, labels, window_size=None, preprocessing=LowpassWrapper(), step_size=None):
     """Returns a trained sklearn pipeline of [csp, lda]
 
     Parameters
@@ -34,6 +34,9 @@ def get_trained_CSP_LDA(data, labels, window_size=None, preprocessing=LowpassWra
     preprocessing : object implementing fit_transform and transform
         Preprocessing step to add at the beggining of the sklearn pipeline
         Default BIpy.preprocessing.LowpassWraspper()
+    step_size : int, default None
+        Stride/step size passed to BIpy.data_processing.get_windows()
+        If None, classifier will be trained on raw data and get_windows() is never used
 
     Returns
     -------
@@ -41,11 +44,9 @@ def get_trained_CSP_LDA(data, labels, window_size=None, preprocessing=LowpassWra
         A trained csp + lda Pipeline
     """
 
-    if window_size == None:
-        window_size = data.shape[-1]
-
     # slide window over trial data to generate many more data points
-    data, labels = get_sliding_window_partition(data, labels, window_size)
+    if step_size and window_size and window_size < data.shape[-1]:
+        data, labels = get_windows(data, labels, window_size, step_size)
 
     # make pipeline
     preproc = preprocessing
