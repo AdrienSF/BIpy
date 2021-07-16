@@ -8,7 +8,8 @@ from BIpy.bci.stims import NeuroFeedbackStim
 # from BIpy.bci.classifier_process import ClassifierProcess
 from classifier_process import ClassifierProcess
 from BIpy.bci.inlets import ClassifierInlet
-from BIpy.bci.models import WrappedCSPLDAClassifier
+# from BIpy.bci.models import WrappedCSPLDAClassifier
+from models import WrappedCSPLDAClassifier
 
 from psychopy import visual, core, event
 from pylsl import StreamInlet, resolve_stream

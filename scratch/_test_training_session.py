@@ -1,4 +1,4 @@
-from BIpy.bci.training_session import TrainingSession
+from training_session import TrainingSession
 from psychopy import visual, core
 
 win = visual.Window(monitor='testMonitor', fullscr=True)

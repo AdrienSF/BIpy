@@ -1,6 +1,7 @@
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_byprop
 from multiprocessing import Process
-from BIpy.bci.inlets import WindowInlet
+# from BIpy.bci.inlets import WindowInlet
+from inlets import WindowInlet
 import numpy as np
 
 import time

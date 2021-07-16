@@ -3,7 +3,7 @@ import numpy as np
 from time import sleep, time
 
 class WindowInlet():
-    """A class used like a pylsl inlet, but that returns window_size past samples on each pull_window
+    """A class used like a pylsl inlet, but that returns window_size past samples on each pull_window. Redundant as plsl's pull_chunk() already does this (?)
     Attributes
     ----------
     inlet : pylsl.StreamInlet

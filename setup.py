@@ -6,7 +6,7 @@ with open('README.md') as f:
 setup(
     name='BIpy',
     packages=find_packages(include=['BIpy', 'BIpy.bci']),
-    version='0.2.4',
+    version='0.2.6',
     description='py for BI',
     author='Self',
     license='BSD 3-Clause License',

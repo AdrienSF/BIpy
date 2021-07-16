@@ -97,10 +97,10 @@ class WrappedCSPLDAClassifier():
 
     def predict_proba(self, window: np.array):
         """takes the output form a WindowInlet and returns the probability (according to the csp+lda classifier) that the right hand was imagined"""
-        
+        window = window[0]
         data = np.transpose(np.array(window))[self.data_channels]
         print('data shape in wrapped:', data.shape)
-        proba = self.clf.predict_proba(data)
+        proba = self.clf.predict_proba([data])
         return proba[0][1] # proba = [[prob_left, prob_right]]
 
 
