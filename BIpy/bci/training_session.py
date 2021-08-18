@@ -5,7 +5,7 @@ import gc
 from BIpy.session import Session
 from BIpy.data_processing import get_windows, LowpassWrapper
 from BIpy.bci.stims import NeuroFeedbackStim
-from classifier_process import ClassifierProcess
+from BIpy.bci.classifier_process import ClassifierProcess
 from BIpy.bci.inlets import ClassifierInlet
 from BIpy.bci.models import WrappedCSPLDAClassifier
 
@@ -23,29 +23,42 @@ from mne.decoding import CSP
 def TrainingSession(win, iterations: int, trials_per_iteration: int, clf=WrappedCSPLDAClassifier(), trial_duration=4, sampling_rate=500, data_channels=list(range(20)), window_size=500, step_size=100, eeg_source_id='myuid323457', eeg_stream_no=0, resolution=6):
     """Returns a Session object that runs an iterative training session.
 
-    The returned Session performs a block of neurofeedback trials, then re-trains the classifier on the newly collected data and runs a new block of neurofeedback trials. The EEG data, classifier predictions and true labels are saved to files.
+    The returned Session performs a block of neurofeedback trials, then re-trains the classifier on the newly collected data and runs a new block of neurofeedback trials. The EEG data, classifier predictions and true labels are saved to files. The defaults of this function are suitable for dry EEG
     
     Parameters
     ----------
-    win : object implementing predict_proba(data)
-        Classifier to run
-    iterations : str
-        Pylsl stream source_id of incoming data to be fed to the classifier
-            Default myuid323457 - dry EEG, for ActiChamp use 17010768
-    trials_per_iteration : str
-        Pylsl stream source_id for output of the classifier
-        Default 'classifier_output'
-    clf : int
+    win : psychopy.visual.Window()
+        window in which the session will occur
+    iterations : int
+        number of blocks/ number of times the classifier is re-trained on new data
+    trials_per_iteration : int
+        number of trials per block
+    clf : classifier object compatible with BIpy.bci.ClassifierProcess()
+        the classifier used to predict left/right motor imagery
+    trial_duration : int, default 4
+        duration in seconds of each trial
+    sampling_rate : int, default 500
+        sampling rate of data sent to the EEG lsl stream
+    data_channels : list, default 0 through 19
+        indeces of the electrode channels the classifier should use as input
+    window_size: int, default 500
+        number of samples the given classifier should take as input at once
+    step_size : int, default 100
+        the given classifier is trained on multiple windows spanning the data collected in one trial. step_size is the gap (in samples) between the start of each window.
+        if one trial contains 800 samples of eeg data, the window size is 400 and the step size is 200, then the classifier will be trained using 3 windows for each trial: samples 0-400, 200-600, and 400-800
+        the window size, step size and samples per trial need not line up perfectly, all data will be used for training regardless (but the last step size will differ from the rest)
+    eeg_source_id : str, default 'myuid323457'
+        Pylsl stream source_id of incoming eeg data to be fed to the classifier
+        Default myuid323457 - dry EEG, for ActiChamp use 17010768
+    eeg_stream_no : int, default 0
         Index of the stream. Should be 0 or 1, ask Tian for help on this
-        Default 0
-    trial_duration : int
-        Number of samples required as input to the provided classifier clf
-        If None, the function will attenpt to get this from clf.window_size
-        Default None
+    resolution : int, default 6
+        number of segments in on each side of the BIpy.bci.stims.NeuroFeedbackStim displayed on screen
+
 
     Output
     ------
-    multiprocessing.process() of BIpy.classifier_process.run_classifier()
+    BIpy.Session Object
     
     """
 

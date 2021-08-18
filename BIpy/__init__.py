@@ -10,6 +10,9 @@ bci.inlets.ClassifierInlet
 bci.models.DummyClassifier
 bci.models.get_trained_CSP_LDA
 
+bci.stims.NeuroFeedbackStim
+
+bci.training_session.TraininSession
 
 Data Processing:
 data_processing.default_instructed_trigmap
