@@ -5,7 +5,6 @@ import gc
 from BIpy.session import Session
 from BIpy.data_processing import get_windows, LowpassWrapper
 from BIpy.bci.stims import NeuroFeedbackStim
-# from BIpy.bci.classifier_process import ClassifierProcess
 from classifier_process import ClassifierProcess
 from BIpy.bci.inlets import ClassifierInlet
 from BIpy.bci.models import WrappedCSPLDAClassifier
@@ -22,7 +21,35 @@ from mne.decoding import CSP
 
 
 def TrainingSession(win, iterations: int, trials_per_iteration: int, clf=WrappedCSPLDAClassifier(), trial_duration=4, sampling_rate=500, data_channels=list(range(20)), window_size=500, step_size=100, eeg_source_id='myuid323457', eeg_stream_no=0, resolution=6):
+    """Returns a Session object that runs an iterative training session.
+
+    The returned Session performs a block of neurofeedback trials, then re-trains the classifier on the newly collected data and runs a new block of neurofeedback trials. The EEG data, classifier predictions and true labels are saved to files.
     
+    Parameters
+    ----------
+    win : object implementing predict_proba(data)
+        Classifier to run
+    iterations : str
+        Pylsl stream source_id of incoming data to be fed to the classifier
+            Default myuid323457 - dry EEG, for ActiChamp use 17010768
+    trials_per_iteration : str
+        Pylsl stream source_id for output of the classifier
+        Default 'classifier_output'
+    clf : int
+        Index of the stream. Should be 0 or 1, ask Tian for help on this
+        Default 0
+    trial_duration : int
+        Number of samples required as input to the provided classifier clf
+        If None, the function will attenpt to get this from clf.window_size
+        Default None
+
+    Output
+    ------
+    multiprocessing.process() of BIpy.classifier_process.run_classifier()
+    
+    """
+
+
     def kill(logger):
         logger.hide_trial()
         info = logger.info
@@ -39,7 +66,7 @@ def TrainingSession(win, iterations: int, trials_per_iteration: int, clf=Wrapped
             
             
     def collect(logger):
-        print('starting collect trial')
+        # print('starting collect trial')
         info = logger.info
 
         # ask to start
@@ -47,6 +74,8 @@ def TrainingSession(win, iterations: int, trials_per_iteration: int, clf=Wrapped
         text_stim.draw()
         window.flip()
         event.waitKeys()
+        text_stim.text = 'Buffering...'
+        text_stim.draw()
         window.flip()
         # 2 sec delay
         core.wait(2)
@@ -54,7 +83,7 @@ def TrainingSession(win, iterations: int, trials_per_iteration: int, clf=Wrapped
         trial_data = []
         predict_probas = []
         clock = core.Clock()
-        print('starting trial loop')
+        # print('starting trial loop')
         # wait until classifier process is ready to start classifying
         info['cinlet'].pull_sample()
         # clear eeg lsl buffer
@@ -78,29 +107,34 @@ def TrainingSession(win, iterations: int, trials_per_iteration: int, clf=Wrapped
 
         # append label and data to info
         # change trial data to mne's CSP input format
-        print('untrimmed trial_data shape:', np.array(trial_data).shape)
+        # print('untrimmed trial_data shape:', np.array(trial_data).shape)
 
         trial_data = np.transpose(np.array(trial_data)[:info['samples_per_trial'],info['data_channels']])
-        print('trial_data shape:', trial_data.shape)
+        # print('trial_data shape:', trial_data.shape)
         info['data'] = np.vstack((info['data'], [trial_data]))
         info['labels'].append(label)
-        print('[collect]: data shape:', np.array(info['data']).shape)
+        # print('[collect]: data shape:', np.array(info['data']).shape)
         # log true label and list of predict proba
         logger.log({'label': label, 'predict_probas': predict_probas})
 
     def train(logger):
         logger.hide_trial()
         info = logger.info
+
+        text_stim.text = 'Training classifier...'
+        text_stim.draw()
+        window.flip()
+
         # kill old classifier (if there is one)
         if 'cproc' in info and info['cproc']:
             info['cproc'].kill()
             info['cproc'].join()
             info['cproc'].close()
         # split data into the right size chunks for clf input
-        print('[train]: data shape:', np.array(info['data']).shape)
+        # print('[train]: data shape:', np.array(info['data']).shape)
         gc.collect()
         data, labels = get_windows(np.array(info['data']), np.array(info['labels']), info['window_size'], step_size=100)
-        print('windowed data shape:', data.shape)
+        # print('windowed data shape:', data.shape)
         # re-train model
         info['clf'].fit(data, labels)
         # re-start classifier process
@@ -134,7 +168,7 @@ def TrainingSession(win, iterations: int, trials_per_iteration: int, clf=Wrapped
         'sampling_rate': sampling_rate,
         'samples_per_trial': samples_per_trial,
         'data_channels': data_channels,
-        'data': np.empty((0,len(data_channels), samples_per_trial)), # [NOTE]: parameterize or somehow integrate this
+        'data': np.empty((0,len(data_channels), samples_per_trial)),
         'labels': []
     }
 

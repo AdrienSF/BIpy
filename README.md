@@ -32,52 +32,6 @@ electrode_info.csv<br>
 electrode_info.json
 
 
-### Example usage of BCI
-```python
-    import BYpy.bci as bci
-    import numpy as np
-    from Psychopy import event, core, visual
-    from pylsl import resolve_stream, StreamInlet
-    # do Psychopy stuff
-    win = visual.Window(monitor='testMonitor', fullscr=True)
-    text_stim = visual.TextStim(win, color='grey')
-
-
-    # train classifier on previously recorded data
-    data = np.load('some_data.npy')
-    labels = np.load('some_labels.npy')
-
-    clf = bci.models.get_trained_CSP_LDA(data, labels)
-
-    # start a classifier process that runs in the background, 
-    # in_source_id='myuid323457' corresponds to the stream of data from dry eeg that will be classified via CSP + LDA
-    # window_size=500 means the classifier will use the past 500 samples from the dry eeg as input
-    clfproc = bci.classifier_process.ClassifierProcess(clf, in_source_id='myuid323457', out_source_id='classifier_output', window_size=500)
-
-    # listen to the output of the classifier
-    inlet = bci.inlets.ClassifierInlet(source_id='classifier_output')
-
-    for _ in range(100):
-        # get a new sample from the classifer every second for 100 seconds
-        core.wait(1)
-        sample, timestamp = inlet.pull_sample()
-
-        # display the classifier's prediction on screen
-        text_stim.text = str(sample)
-        text_stim.draw()
-        win.flip()
-
-    
-    # stop the classifier process, if not it could keep running in the background indefinetly
-    clfproc.kill()
-    clfproc.join()
-    clfproc.close()
-
-    # exit Psychopy
-    win.close()
-    core.quit()
-```
-
 ### Example usage of Session
 ```python
     from BIpy.sesssion import Session
@@ -156,6 +110,66 @@ electrode_info.json
     session.run()
 
     # exit Psychopy
+    win.close()
+    core.quit()
+```
+
+### Example usage of BCI
+```python
+    import BYpy.bci as bci
+    import numpy as np
+    from Psychopy import event, core, visual
+    from pylsl import resolve_stream, StreamInlet
+    # do Psychopy stuff
+    win = visual.Window(monitor='testMonitor', fullscr=True)
+    text_stim = visual.TextStim(win, color='grey')
+
+
+    # train classifier on previously recorded data
+    data = np.load('some_data.npy')
+    labels = np.load('some_labels.npy')
+
+    clf = bci.models.get_trained_CSP_LDA(data, labels)
+
+    # start a classifier process that runs in the background, 
+    # in_source_id='myuid323457' corresponds to the stream of data from dry eeg that will be classified via CSP + LDA
+    # window_size=500 means the classifier will use the past 500 samples from the dry eeg as input
+    clfproc = bci.classifier_process.ClassifierProcess(clf, in_source_id='myuid323457', out_source_id='classifier_output', window_size=500)
+
+    # listen to the output of the classifier
+    inlet = bci.inlets.ClassifierInlet(source_id='classifier_output')
+
+    for _ in range(100):
+        # get a new sample from the classifer every second for 100 seconds
+        core.wait(1)
+        sample, timestamp = inlet.pull_sample()
+
+        # display the classifier's prediction on screen
+        text_stim.text = str(sample)
+        text_stim.draw()
+        win.flip()
+
+    
+    # stop the classifier process, if not it could keep running in the background indefinetly
+    clfproc.kill()
+    clfproc.join()
+    clfproc.close()
+
+    # exit Psychopy
+    win.close()
+    core.quit()
+```
+
+### Example usage of TrainingSession
+```python
+    from training_session import TrainingSession
+    from psychopy import visual, core
+
+    win = visual.Window(monitor='testMonitor', fullscr=True)
+
+    sess = TrainingSession(win, iterations=5, trials_per_iteration=20)
+
+    sess.run()
     win.close()
     core.quit()
 ```

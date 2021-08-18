@@ -153,7 +153,8 @@ class Session():
 
     def hide_trial(self):
         '''Marks current trial to be ignored when saving to csv'''
-        self.to_hide.append(self._iq[0])
+        # prepend so it's convinient to iteratively pop hidden trials from trial list
+        self.to_hide.insert(0, self._iq[0])
 
 
     def save(self):

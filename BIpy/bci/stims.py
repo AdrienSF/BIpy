@@ -3,14 +3,32 @@ import math
 
 
 class NeuroFeedbackStim():
-    def __init__(self, win, resolution):
+    """Progress bar style stim for displaying classifier output to the subject
+
+    Methods
+    -------
+    draw(self, porportion=None)
+        draws the stim
+    
+    """    
+
+    def __init__(self, win, resolution: int):
+        """
+            Parameters
+            ----------
+            win : Psychopy.visual.Window()
+                window in which the stim will be drawn
+            resolution : int
+                number of segments in on each side of the "progress bar"
+        """
+        
         self.window = win
         self.resolution = resolution
         self.frame_width = .8*2
         self.frame_height = .2
         self.seg_width = self.frame_width/(2*resolution)
 
-        self.frame = visual.rect.Rect(win, lineColor='blue', size=(self.frame_width, self.frame_height))
+        self.frame = visual.rect.Rect(win, lineColor='Black', size=(self.frame_width, self.frame_height))
 
         self.segments = []
         for i in range(resolution):
@@ -22,6 +40,15 @@ class NeuroFeedbackStim():
 
 
     def draw(self, proportion=None):
+        """draws the stim
+
+            Parameters
+            ----------
+            proportion : float, default None
+                value between 0 and 1. At 0 the "progress bar" reaches all the way to the left, and at 1 it reaches the right
+                
+        """
+        
         if proportion == None:
             for seg in self.segments:
                 seg.draw()
