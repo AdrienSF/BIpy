@@ -2,6 +2,10 @@
 
 Python package to help build experiments at the Brain Institute. It’s main purpose is to help using the real-time BCI.
 
+## Installation
+``` pip install BIpy ```
+
+[https://pypi.org/project/BIpy/](https://pypi.org/project/BIpy/)
 
 ## Module contents
 
